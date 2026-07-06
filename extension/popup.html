@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Focus Companion</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        width: 340px;
+        margin: 0;
+        padding: 16px;
+        background: #ffffff;
+        color: #111827;
+      }
+      h1 { font-size: 15px; margin: 0 0 4px; }
+      p.sub { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
+      .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        font-size: 12px;
+      }
+      .row { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0; }
+      .row span:first-child { color: #6b7280; }
+      button {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        background: #111827;
+        color: white;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 6px;
+      }
+      button.secondary { background: white; color: #111827; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      .status { font-size: 11px; color: #6b7280; margin-top: 6px; text-align: center; min-height: 14px; }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .badge.ok { background: #dcfce7; color: #166534; }
+      .badge.off { background: #fee2e2; color: #991b1b; }
+      .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .stat { background: #f9fafb; padding: 6px 8px; border-radius: 8px; }
+      .stat .label { font-size: 10px; color: #6b7280; }
+      .stat .value { font-size: 14px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Focus Companion</h1>
+    <p class="sub">Sync your focus data to Lovable.</p>
+
+    <div class="card">
+      <div class="row">
+        <span>Account</span>
+        <span id="account-status"><span class="badge off">Not paired</span></span>
+      </div>
+      <div class="row">
+        <span>Email</span>
+        <span id="account-email">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:6px;">Today</div>
+      <div class="stats">
+        <div class="stat"><div class="label">XP</div><div class="value" id="s-xp">0</div></div>
+        <div class="stat"><div class="label">Streak</div><div class="value" id="s-streak">0</div></div>
+        <div class="stat"><div class="label">Focus score</div><div class="value" id="s-focus">100</div></div>
+        <div class="stat"><div class="label">Pomodoros</div><div class="value" id="s-pomo">0</div></div>
+        <div class="stat"><div class="label">Study min</div><div class="value" id="s-min">0</div></div>
+        <div class="stat"><div class="label">Distractions</div><div class="value" id="s-dist">0</div></div>
+      </div>
+    </div>
+
+    <button id="paste-btn">Paste Session JSON</button>
+    <button id="pomo-btn" class="secondary">+1 Pomodoro (25 min)</button>
+    <button id="dist-btn" class="secondary">+1 Distraction</button>
+    <button id="sync-btn" class="secondary">Sync now</button>
+    <button id="signout-btn" class="secondary">Sign out</button>
+
+    <div class="status" id="status"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

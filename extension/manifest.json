@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Companion",
+  "version": "1.0.0",
+  "description": "Syncs XP, streaks, focus score, pomodoros, study minutes, distractions, and focus sessions to your Lovable dashboard.",
+  "permissions": ["storage", "alarms", "tabs", "activeTab"],
+  "host_permissions": ["https://grkxyiajeucfozfgwisk.supabase.co/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Focus Companion"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

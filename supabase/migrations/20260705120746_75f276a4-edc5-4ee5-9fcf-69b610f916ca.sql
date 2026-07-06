@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_stats ADD COLUMN IF NOT EXISTS goals_completed_today integer NOT NULL DEFAULT 0;

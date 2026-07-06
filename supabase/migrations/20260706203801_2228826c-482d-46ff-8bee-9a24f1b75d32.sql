@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_stats ADD COLUMN IF NOT EXISTS xp_spent integer NOT NULL DEFAULT 0;

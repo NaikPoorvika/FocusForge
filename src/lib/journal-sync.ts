@@ -116,20 +116,10 @@ export function useJournalSync(userId: string | undefined) {
     (async () => {
       const remote = await hydrateFromRemote(userId);
       if (cancelled || remote === null) return;
-      const localExisting = getState().journal;
-
-      if (remote.length === 0 && localExisting.length > 0) {
-        const rows = localExisting.map((j) => entryToRow(j, userId));
-        const { error } = await supabase
-          .from("journal_entries")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .upsert(rows as any, { onConflict: "user_id,local_id" });
-        if (error) console.error("Initial journal upload failed", error);
-        prevRef.current = new Map(localExisting.map((j) => [j.id, j]));
-      } else {
-        setState((s) => ({ ...s, journal: remote }));
-        prevRef.current = new Map(remote.map((j) => [j.id, j]));
-      }
+      // Adopt Supabase as the source of truth. Never upload leftover local
+      // entries into this account — they may belong to a different user.
+      setState((s) => ({ ...s, journal: remote }));
+      prevRef.current = new Map(remote.map((j) => [j.id, j]));
       readyRef.current = true;
     })();
 

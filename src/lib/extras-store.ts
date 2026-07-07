@@ -154,3 +154,8 @@ export function replaceExtras(next: ExtrasState) {
     coding: next.coding ?? [],
   }));
 }
+
+/** Wipe local extras when the signed-in user changes to prevent cross-user leakage. */
+export function resetExtras() {
+  setExtras(() => ({ resources: [], coding: [] }));
+}

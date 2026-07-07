@@ -167,59 +167,10 @@ export function useHabitsSync(userId: string | undefined) {
     (async () => {
       const remote = await hydrateFromRemote(userId);
       if (cancelled || remote === null) return;
-      const localExisting = getState().habits;
-
-      if (remote.length === 0 && localExisting.length > 0) {
-        // First sign-in migration: upload local habits + their logs.
-        const habitRows = localExisting.map((h, i) => habitToRow(h, userId, i));
-        const { error: upErr } = await supabase
-          .from("habits")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .upsert(habitRows as any, { onConflict: "user_id,local_id" });
-        if (upErr) console.error("Initial habits upload failed", upErr);
-
-        const logRows: {
-          user_id: string;
-          habit_local_id: string;
-          log_date: string;
-          completed: boolean;
-          skipped: boolean;
-        }[] = [];
-        for (const h of localExisting) {
-          for (const d of Object.keys(h.history)) {
-            logRows.push({
-              user_id: userId,
-              habit_local_id: h.id,
-              log_date: d,
-              completed: true,
-              skipped: false,
-            });
-          }
-          for (const d of Object.keys(h.skips)) {
-            if (h.history[d]) continue;
-            logRows.push({
-              user_id: userId,
-              habit_local_id: h.id,
-              log_date: d,
-              completed: false,
-              skipped: true,
-            });
-          }
-        }
-        if (logRows.length) {
-          const { error: lUpErr } = await supabase
-            .from("habit_logs")
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .upsert(logRows as any, {
-              onConflict: "user_id,habit_local_id,log_date",
-            });
-          if (lUpErr) console.error("Initial habit logs upload failed", lUpErr);
-        }
-        prevRef.current = new Map(localExisting.map((h) => [h.id, h]));
-      } else {
-        setState((s) => ({ ...s, habits: remote }));
-        prevRef.current = new Map(remote.map((h) => [h.id, h]));
-      }
+      // Adopt Supabase as the source of truth for this account. Never upload
+      // leftover local habits/logs — they may belong to a previous user.
+      setState((s) => ({ ...s, habits: remote }));
+      prevRef.current = new Map(remote.map((h) => [h.id, h]));
       readyRef.current = true;
     })();
 

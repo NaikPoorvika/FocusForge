@@ -146,22 +146,11 @@ export function useTasksSync(userId: string | undefined) {
     (async () => {
       const remote = await hydrateFromRemote(userId);
       if (cancelled || remote === null) return;
-      const localExisting = getState().tasks;
-
-      // First sign-in migration: if there are local tasks and no remote,
-      // upload them so users don't lose their data.
-      if (remote.length === 0 && localExisting.length > 0) {
-        const rows = localExisting.map((t) => taskToRow(t, userId));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: upErr } = await supabase
-          .from("tasks")
-          .upsert(rows as any, { onConflict: "user_id,local_id" });
-        if (upErr) console.error("Initial task upload failed", upErr);
-        prevRef.current = new Map(localExisting.map((t) => [t.id, t]));
-      } else {
-        setState((s) => ({ ...s, tasks: remote }));
-        prevRef.current = new Map(remote.map((t) => [t.id, t]));
-      }
+      // Always adopt the authenticated user's remote rows as the source of
+      // truth. Never upload leftover local rows into this account — those may
+      // belong to a different user who was signed in previously on this device.
+      setState((s) => ({ ...s, tasks: remote }));
+      prevRef.current = new Map(remote.map((t) => [t.id, t]));
       readyRef.current = true;
     })();
 

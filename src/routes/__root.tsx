@@ -18,7 +18,8 @@ import { ThemeManager } from "@/components/theme-manager";
 import { AppShell } from "@/components/app-shell";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { FocusGuard } from "@/components/focus-guard";
-import { useAppState } from "@/lib/store";
+import { useAppState, getStoredAuthUserId, setStoredAuthUserId, resetUserScopedState } from "@/lib/store";
+import { resetExtras } from "@/lib/extras-store";
 import { useTasksSync } from "@/lib/tasks-sync";
 import { useHabitsSync } from "@/lib/habits-sync";
 import { useGoalsSync } from "@/lib/goals-sync";
@@ -144,12 +145,28 @@ function AppGate() {
 
   useEffect(() => {
     let mounted = true;
+
+    // Wipe local state whenever the signed-in user id changes (initial load,
+    // sign-out, or switching accounts in the same browser). This prevents one
+    // account from ever seeing another account's cached tasks/habits/goals/
+    // journal/rewards/xp before Supabase hydration overwrites them.
+    const reconcileAuthUser = (uid: string | null) => {
+      const stored = getStoredAuthUserId();
+      if (stored !== uid) {
+        resetUserScopedState();
+        resetExtras();
+        setStoredAuthUserId(uid);
+      }
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      reconcileAuthUser(data.session?.user?.id ?? null);
       setSession(data.session);
       setLoadingSession(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      reconcileAuthUser(next?.user?.id ?? null);
       setSession(next);
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         router.invalidate();

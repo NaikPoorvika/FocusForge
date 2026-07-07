@@ -164,21 +164,10 @@ export function useGoalsSync(userId: string | undefined) {
     (async () => {
       const remote = await hydrateFromRemote(userId);
       if (cancelled || remote === null) return;
-      const localExisting = getState().goals;
-
-      if (remote.length === 0 && localExisting.length > 0) {
-        // First sign-in migration: upload local goals so nothing is lost.
-        const rows = localExisting.map((g, i) => goalToRow(g, userId, i));
-        const { error: upErr } = await supabase
-          .from("goals")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .upsert(rows as any, { onConflict: "user_id,local_id" });
-        if (upErr) console.error("Initial goals upload failed", upErr);
-        prevRef.current = new Map(localExisting.map((g) => [g.id, g]));
-      } else {
-        setState((s) => ({ ...s, goals: remote }));
-        prevRef.current = new Map(remote.map((g) => [g.id, g]));
-      }
+      // Adopt Supabase as the source of truth for this account. Never upload
+      // leftover local goals into this account (they may be a different user's).
+      setState((s) => ({ ...s, goals: remote }));
+      prevRef.current = new Map(remote.map((g) => [g.id, g]));
       readyRef.current = true;
     })();
 

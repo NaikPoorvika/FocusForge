@@ -208,6 +208,7 @@ export interface AppState {
 }
 
 const STORAGE_KEY = "sst-app-state-v1";
+const AUTH_USER_KEY = "sst-auth-user-id";
 
 const defaultState: AppState = {
   settings: null,
@@ -379,6 +380,45 @@ function subscribe(cb: () => void) {
 }
 
 export const subscribeStore = subscribe;
+
+// ---- Multi-user isolation ----
+// The local store is shared across browser tabs and persisted to localStorage.
+// When a different user signs in (or a user signs out), we MUST wipe every
+// user-scoped slice so one account never sees another account's data.
+export function getStoredAuthUserId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(AUTH_USER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredAuthUserId(uid: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (uid) window.localStorage.setItem(AUTH_USER_KEY, uid);
+    else window.localStorage.removeItem(AUTH_USER_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Wipe every user-scoped slice. Preserves device-level UI prefs only. */
+export function resetUserScopedState() {
+  ensureHydrated();
+  const preservedTheme = state.theme;
+  const preservedPomodoroSettings = state.pomodoroSettings;
+  const preservedRewardsPrefs = state.rewardsPrefs;
+  state = {
+    ...defaultState,
+    theme: preservedTheme,
+    pomodoroSettings: preservedPomodoroSettings,
+    rewardsPrefs: preservedRewardsPrefs,
+  };
+  persist();
+  emit();
+}
 
 
 export function useAppState<T>(selector: (s: AppState) => T): T {

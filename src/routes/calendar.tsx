@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui-bits";
 import { Badge } from "@/components/ui/badge";
-import { useAppState } from "@/lib/store";
+import { useAppState, getStoredAuthUserId } from "@/lib/store";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
@@ -30,11 +31,25 @@ const MOOD_EMOJI: Record<string, string> = {
 };
 
 function CalendarPage() {
-  const tasks = useAppState((s) => s.tasks);
-  const sessions = useAppState((s) => s.sessions);
-  const journal = useAppState((s) => s.journal);
-  const habits = useAppState((s) => s.habits);
-  const goals = useAppState((s) => s.goals);
+  const { user, loading: authLoading } = useCurrentUser();
+  const storedUserId = getStoredAuthUserId();
+  // Only trust the local store when its owner matches the authenticated
+  // user. During sign-in/sign-out transitions the sync hooks briefly hold
+  // the previous user's data; gating here prevents cross-user leakage on
+  // the calendar's day summaries, history, and aggregations.
+  const storeReady = !!user && storedUserId === user.id;
+
+  const allTasks = useAppState((s) => s.tasks);
+  const allSessions = useAppState((s) => s.sessions);
+  const allJournal = useAppState((s) => s.journal);
+  const allHabits = useAppState((s) => s.habits);
+  const allGoals = useAppState((s) => s.goals);
+
+  const tasks = storeReady ? allTasks : [];
+  const sessions = storeReady ? allSessions : [];
+  const journal = storeReady ? allJournal : [];
+  const habits = storeReady ? allHabits : [];
+  const goals = storeReady ? allGoals : [];
 
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
@@ -85,6 +100,14 @@ function CalendarPage() {
   const today = new Date().toISOString().slice(0, 10);
   const studyMinutes = daySummary.sessions.reduce((n, s) => n + s.minutes, 0);
   const completedTasks = daySummary.tasks.filter((t) => t.completed);
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div>
